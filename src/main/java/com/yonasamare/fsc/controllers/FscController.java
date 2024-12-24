@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -22,10 +23,10 @@ public class FscController {
         return "UP";
     }
 
-    @PostMapping(path ="/validate", produces = "application/json")
-    public List<String> validateScratchCards (@RequestParam("scratchCards") List<String> scratchCards) {
-
-        return null;
+    @PostMapping(path ="/validate", consumes = "application/json", produces = "application/json")
+    public List<Map<String, String>> validateScratchCards (@RequestBody List<String> scratchCardNumbers) {
+//        log.info(" {} scratch card validation requests have been received.", scratchCardNumbers.size());
+        return scratchCardService.validateScratchCards(scratchCardNumbers);
     }
 
     @PostMapping(path = "/generate", consumes = "application/json", produces = "application/json")
