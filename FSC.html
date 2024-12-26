@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fano Scratch Card Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff;
+            color: #000;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #000;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        header p {
+            font-style: italic;
+            margin: 5px 0 0;
+        }
+
+        .admin-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #444;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+
+        .admin-link:hover {
+            background-color: #000;
+        }
+
+        main {
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 30px;
+        }
+
+        form label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        form input {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        form button {
+            padding: 10px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        form button:hover {
+            background-color: #444;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Fano Scratch Card Service</h1>
+    <p>Support Fano's Struggle for Liberty and Justice</p>
+    <!-- Link to Admin Page -->
+    <a href="admin.html" class="admin-link">Admin Login</a>
+</header>
+<main>
+    <!-- User: Validate Scratch Card -->
+    <h2>Validate Your Scratch Card</h2>
+    <form id="validate-form">
+        <label for="card-number">Enter Scratch Card Number:</label>
+        <input type="text" id="card-number" name="card-number" required>
+        <button type="submit">Validate</button>
+    </form>
+    <div id="validate-result" class="result"></div>
+
+    <!-- User: Redeem Scratch Card -->
+    <h2>Redeem Your Scratch Card</h2>
+    <form id="redeem-form">
+        <label for="redeem-number">Enter Scratch Card Number:</label>
+        <input type="text" id="redeem-number" name="redeem-number" required>
+        <button type="submit">Redeem</button>
+    </form>
+    <div id="redeem-result" class="result"></div>
+</main>
+<script>
+    const apiBaseUrl = 'http://localhost:8080/fsc'; // Replace with your actual backend URL
+
+    // Validate Scratch Card
+    document.getElementById('validate-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const cardNumber = document.getElementById('card-number').value;
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/validate/${cardNumber}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('validate-result').innerText = `
+                    Card Number: ${data.scratchCardNumber}
+                    Balance: ${data.balance}
+                    Status: ${data.redeemed ? 'Redeemed' : 'Valid'}
+                `;
+            } else {
+                document.getElementById('validate-result').innerText = data.message || 'Invalid card number.';
+            }
+        } catch (error) {
+            document.getElementById('validate-result').innerText = 'Error validating card. Please try again later.';
+            console.error(error);
+        }
+    });
+
+    // Redeem Scratch Card
+    document.getElementById('redeem-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const redeemNumber = document.getElementById('redeem-number').value;
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/redeem/${redeemNumber}`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('redeem-result').innerText = `
+                    Card Number: ${data.scratchCardNumber}
+                    New Balance: ${data.balance}
+                    Status: Redeemed
+                `;
+            } else {
+                document.getElementById('redeem-result').innerText = data.message || 'Invalid card number or already redeemed.';
+            }
+        } catch (error) {
+            document.getElementById('redeem-result').innerText = 'Error redeeming card. Please try again later.';
+            console.error(error);
+        }
+    });
+</script>
+</body>
+</html>

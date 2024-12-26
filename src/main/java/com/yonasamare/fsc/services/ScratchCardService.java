@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -55,7 +56,8 @@ public class ScratchCardService {
 
                 scratchCard.setRedeemed(false);
                 scratchCard.setBalance(scratchCardRequest.getDenomination());
-
+                //Generate and set the pin
+                scratchCard.setPin(generatePin());
                 // Add to the list of scratch cards
                 scratchCards.add(scratchCard);
 
@@ -120,5 +122,68 @@ public class ScratchCardService {
     }
 
 
+    public List<Map<String, String>> redeemScratchCards(List<String> scratchCardNumbers) {
+        // Validate input format for all scratch card numbers
+        validateInput(scratchCardNumbers);
+
+        ObjectMapper mapper = new ObjectMapper();
+        List<Map<String, String>> results = new ArrayList<>();
+
+        try {
+            // Read all scratch cards from the JSON file
+            List<ScratchCard> scratchCards = mapper.readValue(
+                    new File("scratch_cards.json"),
+                    new TypeReference<>() {
+                    }
+            );
+
+            // Process each scratch card number
+            for (String scratchCardNumber : scratchCardNumbers) {
+                Map<String, String> result = new HashMap<>();
+                result.put("scratchCardNumber", scratchCardNumber);
+
+                // Find the card in the list
+                ScratchCard card = scratchCards.stream()
+                        .filter(c -> c.getScratchCardNumber().equals(scratchCardNumber))
+                        .findFirst()
+                        .orElse(null);
+
+                if (card == null) {
+                    // Card not found
+                    result.put("status", "invalid");
+                    result.put("message", "Scratch card does not exist");
+                } else if (card.isRedeemed()) {
+                    // Card already redeemed
+                    result.put("status", "already_redeemed");
+                    result.put("message", "Scratch card has already been redeemed");
+                } else {
+                    // Redeem the card
+                    card.setRedeemed(true);
+                    card.setRedeemedDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    result.put("status", "success");
+                    result.put("message", "Scratch card redeemed successfully");
+                }
+
+                // Add the result for the current card to the list
+                results.add(result);
+            }
+
+            // Write the updated list back to the JSON file
+            mapper.writeValue(new File("scratch_cards.json"), scratchCards);
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading or writing the JSON file", e);
+        }
+
+        return results;
+    }
+
+    private String generatePin() {
+        SecureRandom random = new SecureRandom();
+        StringBuilder pin = new StringBuilder();
+        for (int i = 1; i < 6; i++) {
+            pin.append(random.nextInt(10));
+        }
+        return pin.toString();
+    }
 }
 

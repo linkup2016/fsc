@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Fano Scratch Card Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff;
+            color: #000;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #000;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        header p {
+            font-style: italic;
+            margin: 5px 0 0;
+        }
+
+        main {
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 30px;
+        }
+
+        form label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        form input {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        form button {
+            padding: 10px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        form button:hover {
+            background-color: #444;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Admin - Fano Scratch Card Service</h1>
+    <p>Admin Panel for Managing Scratch Cards</p>
+</header>
+<main>
+    <!-- Admin Login -->
+    <h2>Admin Login</h2>
+    <form id="admin-login-form">
+        <label for="admin-password">Enter Admin Password:</label>
+        <input type="password" id="admin-password" placeholder="Enter password" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <!-- Admin: Generate Scratch Cards -->
+    <section id="admin-section" style="display:none;">
+        <h2>Admin: Generate Scratch Cards</h2>
+        <form id="generate-form">
+            <label for="card-size">Number of Cards to Generate:</label>
+            <input type="number" id="card-size" name="card-size" required>
+            <label for="denomination">Card Value:</label>
+            <input type="number" id="denomination" name="denomination" required>
+            <button type="submit">Generate</button>
+        </form>
+        <div id="generate-result" class="result"></div>
+    </section>
+</main>
+<script>
+    const apiBaseUrl = 'http://localhost:8080/fsc'; // Replace with your actual backend URL
+    const adminPassword = "secureAdmin123"; // Replace with your actual admin password
+
+    // Admin Login
+    document.getElementById('admin-login-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const passwordInput = document.getElementById('admin-password').value;
+
+        if (passwordInput === adminPassword) {
+            document.getElementById('admin-section').style.display = "block";
+            document.getElementById('admin-login-form').style.display = "none";
+        } else {
+            alert("Incorrect Password! Access denied.");
+        }
+    });
+
+    // Generate Scratch Cards
+    document.getElementById('generate-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const size = document.getElementById('card-size').value;
+        const denomination = document.getElementById('denomination').value;
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/generate/${size}/${denomination}`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('generate-result').innerText = `${data.generatedCount} scratch cards successfully generated.`;
+            } else {
+                document.getElementById('generate-result').innerText = 'Error generating cards. Please try again later.';
+            }
+        } catch (error) {
+            document.getElementById('generate-result').innerText = 'Error generating cards. Please try again later.';
+            console.error(error);
+        }
+    });
+</script>
+</body>
+</html>

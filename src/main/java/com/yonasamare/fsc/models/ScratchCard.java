@@ -2,12 +2,14 @@ package com.yonasamare.fsc.models;
 
 import lombok.Data;
 
-@Data
 public class ScratchCard {
     private long id;
     private String scratchCardNumber;
     private String createdDate;
     private String redeemedDate;
+    private boolean isRedeemed;
+    private double balance;
+    private String pin;
 
     public long getId() {
         return id;
@@ -57,6 +59,10 @@ public class ScratchCard {
         this.balance = balance;
     }
 
-    private boolean isRedeemed;
-    private double balance;
+    public String getPin() {
+        return pin;
+    }
+
+    public void setPin(String pin) {
+    }
 }

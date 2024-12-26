@@ -18,20 +18,26 @@ public class FscController {
     @Autowired
     private ScratchCardService scratchCardService;
 
-    @GetMapping
+    @GetMapping(path = "/health")
     public String healthCheck() {
         return "UP";
     }
 
-    @PostMapping(path ="/validate", consumes = "application/json", produces = "application/json")
-    public List<Map<String, String>> validateScratchCards (@RequestBody List<String> scratchCardNumbers) {
+    @PostMapping(path ="/redeem", consumes = "application/json", produces = "application/json")
+    public List<Map<String, String>> redeemScratchCards (@RequestBody List<String> scratchCardNumbers) {
 //        log.info(" {} scratch card validation requests have been received.", scratchCardNumbers.size());
-        return scratchCardService.validateScratchCards(scratchCardNumbers);
+        return scratchCardService.redeemScratchCards(scratchCardNumbers);
     }
 
     @PostMapping(path = "/generate", consumes = "application/json", produces = "application/json")
     public List<ScratchCard> generateScratchCards (@RequestBody List<ScratchCardRequest> scratchCardRequest) {
 //        scratchCardRequest.forEach(request -> log.info(" {} scratch card creation requests have been received.", scratchCardRequest.size()));
         return scratchCardService.generateScratchcards(scratchCardRequest);
+    }
+
+    @PostMapping(path ="/validate", consumes = "application/json", produces = "application/json")
+    public List<Map<String, String>> validateScratchCards (@RequestBody List<String> scratchCardNumbers) {
+//        log.info(" {} scratch card validation requests have been received.", scratchCardNumbers.size());
+        return scratchCardService.validateScratchCards(scratchCardNumbers);
     }
 }
