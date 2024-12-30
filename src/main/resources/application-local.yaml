@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: fsc-local
+
+  aws:
+    dynamodb:
+      endpoint: http://localhost:8000
+      accessKeyId: local
+      secretAccessKey: local
+      region: us-east-2

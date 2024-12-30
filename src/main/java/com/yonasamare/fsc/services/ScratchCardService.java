@@ -1,36 +1,39 @@
 package com.yonasamare.fsc.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yonasamare.fsc.models.ScratchCard;
 import com.yonasamare.fsc.models.ScratchCardRequest;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
-import java.io.File;
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-@Slf4j
+
 @Service
 public class ScratchCardService {
 
-    public ScratchCardService() {
+    private static final org.slf4j.Logger log
+            = org.slf4j.LoggerFactory.getLogger(ScratchCardService.class);
+    private static final String TABLE_NAME = "ScratchCardTable";
+    private final DynamoDbClient dynamoDbClient;
+
+    @Autowired
+    public ScratchCardService(DynamoDbClient dynamoDbClient) {
+        this.dynamoDbClient = dynamoDbClient;
     }
+
+
 
     public List<ScratchCard> generateScratchcards(List<ScratchCardRequest> scratchCardRequests) {
         List<ScratchCard> scratchCards = new ArrayList<>();
         Random rand = new Random();
-        Set<String> generatedNumbers = new HashSet<>(); // Track unique numbers
+        Set<String> generatedNumbers = new HashSet<>();
 
         for (ScratchCardRequest scratchCardRequest : scratchCardRequests) {
-//            log.info("Generating {} scratch cards with denomination {}",
-//                    scratchCardRequest.getSize(), scratchCardRequest.getDenomination());
-
             for (int j = 0; j < scratchCardRequest.getSize(); j++) {
                 // Generate a unique 16-digit number
                 StringBuilder number;
@@ -42,74 +45,147 @@ public class ScratchCardService {
                             number.append("-");
                         }
                     }
-                } while (generatedNumbers.contains(number.toString())); // Ensure uniqueness
+                } while (generatedNumbers.contains(number.toString()));
                 generatedNumbers.add(number.toString());
-
                 // Create a new ScratchCard object
                 ScratchCard scratchCard = new ScratchCard();
                 scratchCard.setScratchCardNumber(number.toString());
-
-                // Set the createdDate using LocalDateTime
-                String createdDate = LocalDateTime.now()
-                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                scratchCard.setCreatedDate(createdDate);
-
+                scratchCard.setCreatedDate(LocalDateTime.now()
+                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 scratchCard.setRedeemed(false);
                 scratchCard.setBalance(scratchCardRequest.getDenomination());
-                //Generate and set the pin
                 scratchCard.setPin(generatePin());
-                // Add to the list of scratch cards
-                scratchCards.add(scratchCard);
+                log.info("Generating a pin for scratch card number{} ", scratchCard.getScratchCardNumber());
+                log.debug("Generated PIN: {}", scratchCard.getPin());
 
-                // Reset the StringBuilder to generate a new card number
-                number.setLength(0); // IMPORTANT: Prevent appending to the previous number
+                // Add to DynamoDB
+                log.info("Saving scratch card {} to DynamoDB.", scratchCard);
+                saveScratchCardToDynamoDB(scratchCard);
+                scratchCards.add(scratchCard);
             }
-        }
-        // Write to JSON file
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            mapper.writeValue(new File("scratch_cards.json"), scratchCards);
-        } catch (IOException e) {
-//            log.error("Error writing to JSON file", e);
         }
 
         return scratchCards;
     }
 
     public List<Map<String, String>> validateScratchCards(List<String> scratchCardNumbers) {
-        // Validate input parameters
         validateInput(scratchCardNumbers);
-
         List<Map<String, String>> results = new ArrayList<>();
-        ObjectMapper mapper = new ObjectMapper();
 
-        try {
-            // Read scratch cards from the JSON file once
-            List<ScratchCard> scratchCards = mapper.readValue(
-                    new File("scratch_cards.json"),
-                    new TypeReference<>() {
-                    }
-            );
+        for (String number : scratchCardNumbers) {
+            Map<String, String> result = new HashMap<>();
+            result.put("scratchCardNumber", number);
 
-            // Iterate through the provided scratch card numbers
-            for (String number : scratchCardNumbers) {
-                boolean isValid = scratchCards.stream()
-                        .anyMatch(card -> card.getScratchCardNumber().equals(number));
-
-                // Create a map to tag the number as valid or invalid
-                Map<String, String> result = new HashMap<>();
-                result.put("scratchCardNumber", number);
-                result.put("status", isValid ? "valid" : "invalid");
-                results.add(result);
+            ScratchCard card = getScratchCardFromDynamoDB(number);
+            if (card != null) {
+                result.put("status", "valid");
+            } else {
+                result.put("status", "invalid");
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading or processing the JSON file", e);
+
+            results.add(result);
         }
 
         return results;
     }
 
-    // Helper method for input validation
+    public List<Map<String, String>> redeemScratchCards(List<String> scratchCardNumbers) {
+        validateInput(scratchCardNumbers);
+        List<Map<String, String>> results = new ArrayList<>();
+
+        for (String scratchCardNumber : scratchCardNumbers) {
+            Map<String, String> result = new HashMap<>();
+            result.put("scratchCardNumber", scratchCardNumber);
+
+            ScratchCard card = getScratchCardFromDynamoDB(scratchCardNumber);
+            if (card == null) {
+                result.put("status", "invalid");
+                result.put("message", "Scratch card does not exist");
+            } else if (card.isRedeemed()) {
+                result.put("status", "already_redeemed");
+                result.put("message", "Scratch card has already been redeemed");
+            } else {
+                card.setRedeemed(true);
+                card.setRedeemedDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                updateScratchCardInDynamoDB(card);
+                result.put("status", "success");
+                result.put("message", "Scratch card redeemed successfully");
+            }
+
+            results.add(result);
+        }
+
+        return results;
+    }
+
+    private void saveScratchCardToDynamoDB(ScratchCard scratchCard) {
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put("scratchCardNumber", AttributeValue.builder().s(scratchCard.getScratchCardNumber()).build());
+        item.put("pin", AttributeValue.builder().s(scratchCard.getPin()).build());
+        item.put("balance", AttributeValue.builder().n(String.valueOf(scratchCard.getBalance())).build());
+        item.put("createdDate", AttributeValue.builder().s(scratchCard.getCreatedDate()).build());
+        item.put("redeemed", AttributeValue.builder().bool(scratchCard.isRedeemed()).build());
+        if (scratchCard.getRedeemedDate() != null) {
+            item.put("redeemedDate", AttributeValue.builder().s(scratchCard.getRedeemedDate()).build());
+        }
+        log.info("Saving scratch card {} to DynamoDB.", scratchCard.getScratchCardNumber());
+        log.debug("Item: {}", item);
+        dynamoDbClient.putItem(PutItemRequest.builder()
+                .tableName(TABLE_NAME)
+                .item(item)
+                .build());
+    }
+
+    private ScratchCard getScratchCardFromDynamoDB(String scratchCardNumber) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put("scratchCardNumber", AttributeValue.builder().s(scratchCardNumber).build());
+
+        GetItemRequest request = GetItemRequest.builder()
+                .tableName(TABLE_NAME)
+                .key(key)
+                .build();
+
+        Map<String, AttributeValue> item = dynamoDbClient.getItem(request).item();
+        if (item == null || item.isEmpty()) {
+            return null;
+        }
+
+        ScratchCard scratchCard = new ScratchCard();
+        scratchCard.setScratchCardNumber(item.get("scratchCardNumber").s());
+        scratchCard.setPin(item.get("pin").s());
+        scratchCard.setBalance(Double.parseDouble(item.get("balance").n()));
+        scratchCard.setCreatedDate(item.get("createdDate").s());
+        scratchCard.setRedeemed(item.get("redeemed").bool());
+        if (item.containsKey("redeemedDate")) {
+            scratchCard.setRedeemedDate(item.get("redeemedDate").s());
+        }
+
+        return scratchCard;
+    }
+
+    private void updateScratchCardInDynamoDB(ScratchCard scratchCard) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put("scratchCardNumber", AttributeValue.builder().s(scratchCard.getScratchCardNumber()).build());
+
+        Map<String, AttributeValueUpdate> updates = new HashMap<>();
+        updates.put("redeemed", AttributeValueUpdate.builder()
+                .value(AttributeValue.builder().bool(scratchCard.isRedeemed()).build())
+                .action(AttributeAction.PUT)
+                .build());
+        if (scratchCard.getRedeemedDate() != null) {
+            updates.put("redeemedDate", AttributeValueUpdate.builder()
+                    .value(AttributeValue.builder().s(scratchCard.getRedeemedDate()).build())
+                    .action(AttributeAction.PUT)
+                    .build());
+        }
+
+        dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                .tableName(TABLE_NAME)
+                .key(key)
+                .attributeUpdates(updates)
+                .build());
+    }
+
     private void validateInput(List<String> scratchCardNumbers) {
         for (String scratchCardNumber : scratchCardNumbers) {
             if (scratchCardNumber.replaceAll("-", "").length() != 16) {
@@ -121,69 +197,12 @@ public class ScratchCardService {
         }
     }
 
-
-    public List<Map<String, String>> redeemScratchCards(List<String> scratchCardNumbers) {
-        // Validate input format for all scratch card numbers
-        validateInput(scratchCardNumbers);
-
-        ObjectMapper mapper = new ObjectMapper();
-        List<Map<String, String>> results = new ArrayList<>();
-
-        try {
-            // Read all scratch cards from the JSON file
-            List<ScratchCard> scratchCards = mapper.readValue(
-                    new File("scratch_cards.json"),
-                    new TypeReference<>() {
-                    }
-            );
-
-            // Process each scratch card number
-            for (String scratchCardNumber : scratchCardNumbers) {
-                Map<String, String> result = new HashMap<>();
-                result.put("scratchCardNumber", scratchCardNumber);
-
-                // Find the card in the list
-                ScratchCard card = scratchCards.stream()
-                        .filter(c -> c.getScratchCardNumber().equals(scratchCardNumber))
-                        .findFirst()
-                        .orElse(null);
-
-                if (card == null) {
-                    // Card not found
-                    result.put("status", "invalid");
-                    result.put("message", "Scratch card does not exist");
-                } else if (card.isRedeemed()) {
-                    // Card already redeemed
-                    result.put("status", "already_redeemed");
-                    result.put("message", "Scratch card has already been redeemed");
-                } else {
-                    // Redeem the card
-                    card.setRedeemed(true);
-                    card.setRedeemedDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                    result.put("status", "success");
-                    result.put("message", "Scratch card redeemed successfully");
-                }
-
-                // Add the result for the current card to the list
-                results.add(result);
-            }
-
-            // Write the updated list back to the JSON file
-            mapper.writeValue(new File("scratch_cards.json"), scratchCards);
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading or writing the JSON file", e);
-        }
-
-        return results;
-    }
-
-    private String generatePin() {
+    private static String generatePin() {
         SecureRandom random = new SecureRandom();
         StringBuilder pin = new StringBuilder();
-        for (int i = 1; i < 6; i++) {
+        for (int i = 0; i < 6; i++) {
             pin.append(random.nextInt(10));
         }
         return pin.toString();
     }
 }
-

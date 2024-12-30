@@ -2,3 +2,13 @@ Fano Scratch Card Processor
 
 This projects aims to generate scratch card numbers, validate those numbers, show balances all based on request.
 
+How to run:
+
+1. Local
+
+Start dynamoDB local on Docker desktop
+Login to DynamoDB Local with using AWS CLI. The credentials are available in the .env file
+Run the scripts in dynamo-scripts to create the table and its items. The local instance of DynamoDB gets reset when computer is turned off.
+Run the application with profile set to local.
+
+2. AWS

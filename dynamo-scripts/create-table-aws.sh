@@ -3,7 +3,7 @@ aws dynamodb create-table \
     --attribute-definitions AttributeName=scratchCardNumber,AttributeType=S \
     --key-schema AttributeName=scratchCardNumber,KeyType=HASH \
     --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-    --endpoint-url http://localhost:8000
+    --region us-east-2
 
 aws dynamodb put-item \
     --table-name ScratchCardTable \
@@ -16,4 +16,4 @@ aws dynamodb put-item \
         "balance": {"N": "100.50"},
         "pin": {"S": "1234"}
     }' \
-    --endpoint-url http://localhost:8000
+    --region us-east-2

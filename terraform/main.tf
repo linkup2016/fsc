@@ -39,7 +39,6 @@ resource "aws_elastic_beanstalk_application_version" "java_app_version" {
 # IAM Role for Elastic Beanstalk
 resource "aws_iam_role" "beanstalk_role" {
   name = "ElasticBeanstalkRole"
-
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
