@@ -1,7 +1,7 @@
 aws dynamodb create-table \
     --table-name ScratchCardTable \
-    --attribute-definitions AttributeName=scratchCardNumber,AttributeType=S \
-    --key-schema AttributeName=scratchCardNumber,KeyType=HASH \
+    --attribute-definitions AttributeName=scratchCardNumber,AttributeType=S AttributeName=createdDate,AttributeType=S \
+    --key-schema AttributeName=scratchCardNumber,KeyType=HASH AttributeName=createdDate,KeyType=RANGE \
     --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
     --region us-east-2
 

@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-
 @Service
 public class ScratchCardService {
 
@@ -25,8 +24,6 @@ public class ScratchCardService {
     public ScratchCardService(DynamoDbClient dynamoDbClient) {
         this.dynamoDbClient = dynamoDbClient;
     }
-
-
 
     public List<ScratchCard> generateScratchcards(List<ScratchCardRequest> scratchCardRequests) {
         List<ScratchCard> scratchCards = new ArrayList<>();
@@ -47,6 +44,7 @@ public class ScratchCardService {
                     }
                 } while (generatedNumbers.contains(number.toString()));
                 generatedNumbers.add(number.toString());
+
                 // Create a new ScratchCard object
                 ScratchCard scratchCard = new ScratchCard();
                 scratchCard.setScratchCardNumber(number.toString());
@@ -130,6 +128,8 @@ public class ScratchCardService {
         }
         log.info("Saving scratch card {} to DynamoDB.", scratchCard.getScratchCardNumber());
         log.debug("Item: {}", item);
+
+        // DynamoDB partition key (scratchCardNumber) and sort key (createdDate)
         dynamoDbClient.putItem(PutItemRequest.builder()
                 .tableName(TABLE_NAME)
                 .item(item)
@@ -139,6 +139,7 @@ public class ScratchCardService {
     private ScratchCard getScratchCardFromDynamoDB(String scratchCardNumber) {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put("scratchCardNumber", AttributeValue.builder().s(scratchCardNumber).build());
+        key.put("createdDate", AttributeValue.builder().s("2024-12-30 00:00:00").build());  // Use createdDate as sort key
 
         GetItemRequest request = GetItemRequest.builder()
                 .tableName(TABLE_NAME)
@@ -166,6 +167,7 @@ public class ScratchCardService {
     private void updateScratchCardInDynamoDB(ScratchCard scratchCard) {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put("scratchCardNumber", AttributeValue.builder().s(scratchCard.getScratchCardNumber()).build());
+        key.put("createdDate", AttributeValue.builder().s(scratchCard.getCreatedDate()).build());  // Sort key is createdDate
 
         Map<String, AttributeValueUpdate> updates = new HashMap<>();
         updates.put("redeemed", AttributeValueUpdate.builder()
