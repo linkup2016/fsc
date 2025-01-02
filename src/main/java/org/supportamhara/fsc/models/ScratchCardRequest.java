@@ -1,4 +1,4 @@
-package com.yonasamare.fsc.models;
+package org.supportamhara.fsc.models;
 
 import jakarta.validation.constraints.Min;
 import lombok.Getter;

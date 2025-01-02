@@ -1,9 +1,8 @@
-package com.yonasamare.fsc.controllers;
+package org.supportamhara.fsc.controllers;
 
-import com.yonasamare.fsc.models.ScratchCard;
-import com.yonasamare.fsc.models.ScratchCardRequest;
-import com.yonasamare.fsc.services.ScratchCardService;
-import lombok.extern.slf4j.Slf4j;
+import org.supportamhara.fsc.models.ScratchCard;
+import org.supportamhara.fsc.models.ScratchCardRequest;
+import org.supportamhara.fsc.services.ScratchCardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

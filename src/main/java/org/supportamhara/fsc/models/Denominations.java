@@ -1,4 +1,4 @@
-package com.yonasamare.fsc.models;
+package org.supportamhara.fsc.models;
 
 public enum Denominations {
     TWENTY_FIVE("$25.00"),

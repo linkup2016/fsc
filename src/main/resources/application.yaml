@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: fsc
+
+  server:
+    address: 0.0.0.0
+    port: 8080
+
+  profiles:
+    active: dev
+
+  aws:
+    dynamodb:
+      endpoint: https://dynamodb.us-east-2.amazonaws.com
+      accessKeyId: ${accessKeyId}
+      secretAccessKey: ${secretAccessKey}
+      region: us-east-2
+
+logging:
+  level:
+    root: INFO
+    com.yonasamare.fsc: DEBUG

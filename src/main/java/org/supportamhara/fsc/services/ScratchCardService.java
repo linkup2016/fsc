@@ -1,7 +1,7 @@
-package com.yonasamare.fsc.services;
+package org.supportamhara.fsc.services;
 
-import com.yonasamare.fsc.models.ScratchCard;
-import com.yonasamare.fsc.models.ScratchCardRequest;
+import org.supportamhara.fsc.models.ScratchCard;
+import org.supportamhara.fsc.models.ScratchCardRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;

@@ -1,16 +1,14 @@
-package com.yonasamare.fsc.services;
+package org.supportamhara.fsc.services;
 
-import com.yonasamare.fsc.models.ScratchCard;
-import com.yonasamare.fsc.models.ScratchCardRequest;
+import org.supportamhara.fsc.models.ScratchCard;
+import org.supportamhara.fsc.models.ScratchCardRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

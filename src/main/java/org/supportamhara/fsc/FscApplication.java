@@ -1,4 +1,4 @@
-package com.yonasamare.fsc;
+package org.supportamhara.fsc;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

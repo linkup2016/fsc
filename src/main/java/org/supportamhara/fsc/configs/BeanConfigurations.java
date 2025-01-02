@@ -1,7 +1,6 @@
-package com.yonasamare.fsc.configs;
+package org.supportamhara.fsc.configs;
 
-import com.yonasamare.fsc.models.ScratchCardRequest;
-import com.yonasamare.fsc.services.ScratchCardService;
+import org.supportamhara.fsc.models.ScratchCardRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,10 +16,10 @@ import java.net.URI;
 public class BeanConfigurations {
     @Value("${spring.aws.dynamodb.endpoint}")
     private String endpoint;
-
-    @Value("${spring.aws.dynamodb.access-key-id}")
+    @Value("${accessKeyId}")
     private String accessKeyId;
-    @Value("${spring.aws.dynamodb.secret-access-key}")
+
+    @Value("${secretAccessKey}")
     private String secretAccessKey;
     @Value("${spring.aws.dynamodb.region}")
     private String region;

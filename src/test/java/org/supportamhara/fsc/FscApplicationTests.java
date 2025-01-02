@@ -1,4 +1,4 @@
-package com.yonasamare.fsc;
+package org.supportamhara.fsc;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

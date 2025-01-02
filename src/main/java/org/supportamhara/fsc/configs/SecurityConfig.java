@@ -1,4 +1,4 @@
-package com.yonasamare.fsc.configs;
+package org.supportamhara.fsc.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
