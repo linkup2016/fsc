@@ -1,10 +1,13 @@
 package org.supportamhara.fsc.controllers;
 
+import org.supportamhara.fsc.models.ApiResponse;
 import org.supportamhara.fsc.models.ScratchCard;
 import org.supportamhara.fsc.models.ScratchCardRequest;
+import org.supportamhara.fsc.services.MerriamDictionaryService;
 import org.supportamhara.fsc.services.ScratchCardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +20,8 @@ public class FscController {
             = org.slf4j.LoggerFactory.getLogger(FscController.class);
     @Autowired
     private ScratchCardService scratchCardService;
+    @Autowired
+    private MerriamDictionaryService merriamDictionnaryService;
 
     @GetMapping(path = "/health")
     public String healthCheck() {
@@ -39,5 +44,10 @@ public class FscController {
     public List<Map<String, String>> validateScratchCards (@RequestBody List<String> scratchCardNumbers) {
         log.info(" {} scratch card validation requests have been received.", scratchCardNumbers.size());
         return scratchCardService.validateScratchCards(scratchCardNumbers);
+    }
+
+    @GetMapping(path ="/dictionnary/{word}", produces = "application/json")
+    public Mono<List<ApiResponse>> getDictionnary (@PathVariable String word, @RequestParam String apiKey) {
+        return merriamDictionnaryService.getDefinition(word, apiKey);
     }
 }

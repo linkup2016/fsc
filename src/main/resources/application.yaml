@@ -7,7 +7,7 @@ spring:
     port: 8080
 
   profiles:
-    active: dev
+    active: local
 
   aws:
     dynamodb:
@@ -20,3 +20,9 @@ logging:
   level:
     root: INFO
     com.yonasamare.fsc: DEBUG
+
+dictionary:
+  api:
+    url: https://www.dictionaryapi.com/api/v3/references/sd2/json
+    key: 6a9d495c-bc16-4e9b-946a-06bbf9d13d55
+
